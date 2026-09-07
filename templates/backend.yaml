@@ -37,9 +37,8 @@ spec:
           envFrom:
             - secretRef: {name: {{ .Values.runtimeSecret }}}
           env:
-            - {name: NODE_ENV, value: production}
-            - {name: BACKEND_HOST, value: "0.0.0.0"}
-            - {name: BACKEND_PORT, value: "3001"}
+            - {name: SERVER_ADDRESS, value: "0.0.0.0"}
+            - {name: SERVER_PORT, value: "3001"}
             - {name: MCP_WRITER_MODE, value: {{ .Values.mcp.writerMode | quote }}}
             - {name: MCP_OLD_WRITER_FENCED, value: {{ .Values.mcp.oldWriterFenced | quote }}}
             {{- if .Values.observability.enabled }}
