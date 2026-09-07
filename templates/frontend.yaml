@@ -53,29 +53,13 @@ spec:
         - name: frontend
           image: "{{ .Values.image.frontend.repository }}:{{ .Values.image.frontend.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          env:
-            - {name: NODE_ENV, value: production}
-            - {name: PORT, value: "3000"}
-            - {name: BACKEND_INTERNAL_URL, value: "http://card-credit-backend:3001"}
-            {{- if .Values.observability.enabled }}
-            - {name: OTEL_SERVICE_NAME, value: card-credit-frontend}
-            - {name: OTEL_EXPORTER_OTLP_ENDPOINT, value: {{ .Values.observability.endpoint | quote }}}
-            - {name: OTEL_EXPORTER_OTLP_PROTOCOL, value: grpc}
-            - {name: OTEL_RESOURCE_ATTRIBUTES, value: "deployment.environment={{ .Values.observability.environment }},service.namespace={{ .Release.Namespace }}"}
-            - {name: OTEL_TRACES_EXPORTER, value: otlp}
-            - {name: OTEL_METRICS_EXPORTER, value: otlp}
-            - {name: OTEL_LOGS_EXPORTER, value: none}
-            - {name: OTEL_TRACES_SAMPLER, value: parentbased_traceidratio}
-            - {name: OTEL_TRACES_SAMPLER_ARG, value: {{ .Values.observability.traceSampling | quote }}}
-            - {name: OTEL_INSTRUMENTATION_HTTP_EXCLUDED_URLS, value: "^/login$|^/_next/"}
-            {{- end }}
           ports:
-            - {name: http, containerPort: 3000}
+            - {name: http, containerPort: 80}
           readinessProbe:
-            httpGet: {path: /login, port: http}
+            httpGet: {path: /health, port: http}
             periodSeconds: 10
           livenessProbe:
-            httpGet: {path: /login, port: http}
+            httpGet: {path: /health, port: http}
             initialDelaySeconds: 20
             periodSeconds: 20
           resources: {{- toYaml .Values.frontend.resources | nindent 12 }}
@@ -96,4 +80,4 @@ spec:
     app.kubernetes.io/name: card-credit
     app.kubernetes.io/component: frontend
   ports:
-    - {name: http, port: 3000, targetPort: http}
+    - {name: http, port: 80, targetPort: http}
