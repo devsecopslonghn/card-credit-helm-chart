@@ -1,0 +1,99 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: card-credit-frontend
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "card-credit.labels" . | nindent 4 }}
+    app.kubernetes.io/component: frontend
+spec:
+  replicas: {{ .Values.frontend.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: card-credit
+      app.kubernetes.io/component: frontend
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: card-credit
+        app.kubernetes.io/component: frontend
+    spec:
+      {{- with .Values.imagePullSecret }}
+      imagePullSecrets:
+        - name: {{ . }}
+      {{- end }}
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 50
+              preference:
+                matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values: [k8s-master]
+            - weight: 45
+              preference:
+                matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values: [k8s-worker2]
+            - weight: 5
+              preference:
+                matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values: [k8s-worker1]
+      securityContext:
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: frontend
+          image: "{{ .Values.image.frontend.repository }}:{{ .Values.image.frontend.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - {name: NODE_ENV, value: production}
+            - {name: PORT, value: "3000"}
+            - {name: BACKEND_INTERNAL_URL, value: "http://card-credit-backend:3001"}
+            {{- if .Values.observability.enabled }}
+            - {name: OTEL_SERVICE_NAME, value: card-credit-frontend}
+            - {name: OTEL_EXPORTER_OTLP_ENDPOINT, value: {{ .Values.observability.endpoint | quote }}}
+            - {name: OTEL_EXPORTER_OTLP_PROTOCOL, value: grpc}
+            - {name: OTEL_RESOURCE_ATTRIBUTES, value: "deployment.environment={{ .Values.observability.environment }},service.namespace={{ .Release.Namespace }}"}
+            - {name: OTEL_TRACES_EXPORTER, value: otlp}
+            - {name: OTEL_METRICS_EXPORTER, value: otlp}
+            - {name: OTEL_LOGS_EXPORTER, value: none}
+            - {name: OTEL_TRACES_SAMPLER, value: parentbased_traceidratio}
+            - {name: OTEL_TRACES_SAMPLER_ARG, value: {{ .Values.observability.traceSampling | quote }}}
+            - {name: OTEL_INSTRUMENTATION_HTTP_EXCLUDED_URLS, value: "^/login$|^/_next/"}
+            {{- end }}
+          ports:
+            - {name: http, containerPort: 3000}
+          readinessProbe:
+            httpGet: {path: /login, port: http}
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: {path: /login, port: http}
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          resources: {{- toYaml .Values.frontend.resources | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: card-credit-frontend
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "card-credit.labels" . | nindent 4 }}
+    app.kubernetes.io/component: frontend
+spec:
+  selector:
+    app.kubernetes.io/name: card-credit
+    app.kubernetes.io/component: frontend
+  ports:
+    - {name: http, port: 3000, targetPort: http}

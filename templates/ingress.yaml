@@ -1,0 +1,34 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: card-credit
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    portal.drgdevlab.com/title: Card Credit
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: {{ .Values.domain }}
+      http:
+        paths:
+          - path: /mcp
+            pathType: Prefix
+            backend:
+              service:
+                name: card-credit-backend
+                port: {number: 3001}
+          - path: /docs
+            pathType: Prefix
+            backend:
+              service:
+                name: card-credit-backend
+                port: {number: 3001}
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: card-credit-frontend
+                port: {number: 3000}
+  tls:
+    - hosts: [{{ .Values.domain }}]

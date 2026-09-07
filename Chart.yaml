@@ -1,0 +1,7 @@
+apiVersion: v2
+name: card-credit
+description: Card Credit frontend and backend deployment
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+

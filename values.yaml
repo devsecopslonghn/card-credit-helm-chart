@@ -1,0 +1,43 @@
+domain: card-credit.apps.drgdevlab.com
+
+image:
+  frontend:
+    tag: 7f6400b49b6daa01c77d3cf56a138f80f0e0db45
+    repository: ghcr.io/devsecopslonghn/card-credit-frontend
+  backend:
+    tag: 11c5fa294f26d8960345a8a8c528799ca20ed9b8
+    repository: ghcr.io/devsecopslonghn/card-credit-backend
+  pullPolicy: IfNotPresent
+
+runtimeSecret: card-credit-runtime
+imagePullSecret: ghcr-pull
+
+observability:
+  enabled: true
+  endpoint: http://collector.observability-dev.svc.cluster.local:4317
+  environment: dev
+  traceSampling: "0.10"
+
+# Canonical MCP mutation traffic is explicitly enabled by DECISION-MCP-WRITE-01.
+# The application still requires the old-writer fence acknowledgement and
+# keeps preview/confirm/idempotency/audit guards in the backend.
+mcp:
+  writerMode: write
+  oldWriterFenced: true
+
+frontend:
+  replicas: 1
+  resources:
+    requests: {cpu: 100m, memory: 256Mi}
+    limits: {cpu: "1", memory: 1Gi}
+
+backend:
+  replicas: 1
+  resources:
+    requests: {cpu: 100m, memory: 256Mi}
+    limits: {cpu: "1", memory: 1Gi}
+
+dataIntegrityMigration:
+  enabled: true
+  backoffLimit: 1
+  activeDeadlineSeconds: 120

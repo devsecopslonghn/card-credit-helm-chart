@@ -1,0 +1,103 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: card-credit-backend
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "card-credit.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backend
+spec:
+  replicas: {{ .Values.backend.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: card-credit
+      app.kubernetes.io/component: backend
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: card-credit
+        app.kubernetes.io/component: backend
+    spec:
+      {{- with .Values.imagePullSecret }}
+      imagePullSecrets:
+        - name: {{ . }}
+      {{- end }}
+      nodeSelector:
+        kubernetes.io/hostname: k8s-master
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
+      securityContext:
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: backend
+          image: "{{ .Values.image.backend.repository }}:{{ .Values.image.backend.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          envFrom:
+            - secretRef: {name: {{ .Values.runtimeSecret }}}
+          env:
+            - {name: NODE_ENV, value: production}
+            - {name: BACKEND_HOST, value: "0.0.0.0"}
+            - {name: BACKEND_PORT, value: "3001"}
+            - {name: MCP_WRITER_MODE, value: {{ .Values.mcp.writerMode | quote }}}
+            - {name: MCP_OLD_WRITER_FENCED, value: {{ .Values.mcp.oldWriterFenced | quote }}}
+            {{- if .Values.observability.enabled }}
+            - {name: OTEL_SERVICE_NAME, value: card-credit-backend}
+            - {name: OTEL_EXPORTER_OTLP_ENDPOINT, value: {{ .Values.observability.endpoint | quote }}}
+            - {name: OTEL_EXPORTER_OTLP_PROTOCOL, value: grpc}
+            - {name: OTEL_RESOURCE_ATTRIBUTES, value: "deployment.environment={{ .Values.observability.environment }},service.namespace={{ .Release.Namespace }}"}
+            - {name: OTEL_TRACES_EXPORTER, value: otlp}
+            - {name: OTEL_METRICS_EXPORTER, value: otlp}
+            - {name: OTEL_LOGS_EXPORTER, value: none}
+            - {name: OTEL_TRACES_SAMPLER, value: parentbased_traceidratio}
+            - {name: OTEL_TRACES_SAMPLER_ARG, value: {{ .Values.observability.traceSampling | quote }}}
+            - {name: OTEL_INSTRUMENTATION_HTTP_EXCLUDED_URLS, value: "^/health$|^/ready$"}
+            {{- end }}
+          ports:
+            - {name: http, containerPort: 3001}
+          startupProbe:
+            httpGet: {path: /health, port: http}
+            failureThreshold: 30
+            periodSeconds: 5
+          readinessProbe:
+            httpGet: {path: /ready, port: http}
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: {path: /health, port: http}
+            periodSeconds: 20
+          resources: {{- toYaml .Values.backend.resources | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: card-credit-backend
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "card-credit.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backend
+spec:
+  selector:
+    app.kubernetes.io/name: card-credit
+    app.kubernetes.io/component: backend
+  ports:
+    - {name: http, port: 3001, targetPort: http}
+---
+# Next.js rewrites are compiled with the Compose-compatible backend hostname.
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "card-credit.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backend
+spec:
+  selector:
+    app.kubernetes.io/name: card-credit
+    app.kubernetes.io/component: backend
+  ports:
+    - {name: http, port: 3001, targetPort: http}

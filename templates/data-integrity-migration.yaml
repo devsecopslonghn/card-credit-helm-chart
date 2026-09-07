@@ -1,0 +1,51 @@
+{{- if .Values.dataIntegrityMigration.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: card-credit-data-integrity-{{ .Values.image.backend.tag | trunc 20 | trimSuffix "-" }}
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/sync-wave: "-1"
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookSucceeded
+  labels:
+    {{- include "card-credit.labels" . | nindent 4 }}
+    app.kubernetes.io/component: migration
+spec:
+  backoffLimit: {{ .Values.dataIntegrityMigration.backoffLimit }}
+  activeDeadlineSeconds: {{ .Values.dataIntegrityMigration.activeDeadlineSeconds }}
+  ttlSecondsAfterFinished: 300
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: card-credit
+        app.kubernetes.io/component: migration
+    spec:
+      restartPolicy: Never
+      {{- with .Values.imagePullSecret }}
+      imagePullSecrets:
+        - name: {{ . }}
+      {{- end }}
+      nodeSelector:
+        kubernetes.io/hostname: k8s-master
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
+      securityContext:
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: data-integrity-migration
+          image: "{{ .Values.image.backend.repository }}:{{ .Values.image.backend.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          envFrom:
+            - secretRef: {name: {{ .Values.runtimeSecret }}}
+          env:
+            - {name: NODE_ENV, value: production}
+            - {name: DATA_INTEGRITY_INDEX_APPLY, value: "true"}
+          command: ["node", "dist/scripts/ensure-data-integrity-indexes.js"]
+          resources: {{- toYaml .Values.backend.resources | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+{{- end }}
