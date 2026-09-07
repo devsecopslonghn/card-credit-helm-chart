@@ -65,7 +65,7 @@ spec:
           resources: {{- toYaml .Values.frontend.resources | nindent 12 }}
           securityContext:
             allowPrivilegeEscalation: false
-            capabilities: {drop: [ALL], add: [CHOWN]}
+            capabilities: {drop: [ALL], add: [CHOWN, SETGID, SETUID]}
 ---
 apiVersion: v1
 kind: Service
