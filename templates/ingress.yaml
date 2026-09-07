@@ -29,6 +29,6 @@ spec:
             backend:
               service:
                 name: card-credit-frontend
-                port: {number: 3000}
+                port: {number: 80}
   tls:
     - hosts: [{{ .Values.domain }}]
