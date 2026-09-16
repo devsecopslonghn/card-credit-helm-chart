@@ -24,6 +24,7 @@ observability:
 mcp:
   writerMode: write
   oldWriterFenced: true
+  queryTrace: false
 
 frontend:
   replicas: 1
