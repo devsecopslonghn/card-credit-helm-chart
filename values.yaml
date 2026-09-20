@@ -5,7 +5,7 @@ image:
     tag: d7ec7dbf8b613362ca6c684ea6170a407dbc2e9e
     repository: ghcr.io/devsecopslonghn/card-credit-fe
   backend:
-    tag: 242edf1fd60c4a0180613b95aef67f7f71642db2
+    tag: 13c92898062130a4434fa1423624948a030daaee
     repository: ghcr.io/devsecopslonghn/card-credit-be
   pullPolicy: IfNotPresent
 
