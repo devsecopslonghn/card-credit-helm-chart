@@ -2,7 +2,7 @@ domain: card-credit.apps.drgdevlab.com
 
 image:
   frontend:
-    tag: 1947ccb5b7bea645c6d535b9407524258c1c8622
+    tag: 494d405100bdd748a88234f8fb1b60ea87e33e5e
     repository: ghcr.io/devsecopslonghn/card-credit-fe
   backend:
     tag: 5fa3f101cbe645e3ea24c0fbd5e3c333affa96f4
