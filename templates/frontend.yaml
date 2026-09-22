@@ -56,7 +56,7 @@ spec:
           image: "{{ .Values.image.frontend.repository }}:{{ .Values.image.frontend.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
-            - {name: http, containerPort: 80}
+            - {name: http, containerPort: 8080}
           readinessProbe:
             httpGet: {path: /health, port: http}
             periodSeconds: 10
@@ -67,7 +67,7 @@ spec:
           resources: {{- toYaml .Values.frontend.resources | nindent 12 }}
           securityContext:
             allowPrivilegeEscalation: false
-            capabilities: {drop: [ALL], add: [CHOWN, SETGID, SETUID]}
+            capabilities: {drop: [ALL]}
 ---
 apiVersion: v1
 kind: Service
