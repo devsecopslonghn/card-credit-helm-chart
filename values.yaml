@@ -2,10 +2,10 @@ domain: card-credit.apps.drgdevlab.com
 
 image:
   frontend:
-    tag: 6a2d13370e329c7313ef1ea8b2b0e0ca29994d47
+    tag: 6a2d13370e329c7313ef1ea8b2b0e0ca29994d47@sha256:be220f92787a739609dbf9daa78bc98769b5ad4580b8ea5fb1f28bc8c62b6e49
     repository: ghcr.io/devsecopslonghn/card-credit-fe
   backend:
-    tag: 1775367cba37528c0727487de4c0b3a75eb181e5
+    tag: 1775367cba37528c0727487de4c0b3a75eb181e5@sha256:6afea9838358ac32c6e8c257416305fd8e06ad0940ec12bf2295af9fa46b1ae8
     repository: ghcr.io/devsecopslonghn/card-credit-be
   pullPolicy: IfNotPresent
 
@@ -39,6 +39,7 @@ backend:
     limits: {cpu: "1", memory: 1Gi}
 
 dataIntegrityMigration:
-  enabled: true
-  backoffLimit: 1
+  # Explicit release operation after native DB backup; security syncs must not run DDL.
+  enabled: false
+  backoffLimit: 0
   activeDeadlineSeconds: 120
