@@ -18,6 +18,8 @@ spec:
         app.kubernetes.io/name: card-credit
         app.kubernetes.io/component: backend
     spec:
+      serviceAccountName: card-credit-backend
+      automountServiceAccountToken: false
       {{- with .Values.imagePullSecret }}
       imagePullSecrets:
         - name: {{ . }}
@@ -72,6 +74,9 @@ spec:
             periodSeconds: 20
           resources: {{- toYaml .Values.backend.resources | nindent 12 }}
           securityContext:
+            runAsNonRoot: true
+            runAsUser: 100
+            runAsGroup: 101
             allowPrivilegeEscalation: false
             capabilities: {drop: [ALL]}
 ---

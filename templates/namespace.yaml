@@ -4,4 +4,7 @@ metadata:
   name: {{ .Release.Namespace }}
   labels:
     app.kubernetes.io/part-of: card-credit
-
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/audit-version: v1.36
+    pod-security.kubernetes.io/warn: restricted
+    pod-security.kubernetes.io/warn-version: v1.36

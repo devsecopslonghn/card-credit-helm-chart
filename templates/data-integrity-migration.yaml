@@ -21,6 +21,8 @@ spec:
         app.kubernetes.io/name: card-credit
         app.kubernetes.io/component: migration
     spec:
+      serviceAccountName: card-credit-migration
+      automountServiceAccountToken: false
       restartPolicy: Never
       {{- with .Values.imagePullSecret }}
       imagePullSecrets:
