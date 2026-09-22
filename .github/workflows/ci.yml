@@ -1,0 +1,18 @@
+name: Helm chart CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    uses: devsecopslonghn/.github/.github/workflows/helm-validate.yml@9dce2f58f486a6bfb0a0d25c1ad901aaa342d0df
+    with:
+      chart_path: .
+      release_name: card-credit
+      namespace: card-credit
+      minimum_kind_count: 8
